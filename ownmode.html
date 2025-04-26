@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Firefly Frenzy: Own Mode</title>
+  <title>Firefly Frenzy - Own Mode</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box }
   body { 
@@ -12,7 +12,7 @@
     background-size: cover;
     transition: background-image 1s ease-in-out;
     color:#fff; 
-    font-family:sans-serif 
+    font-family:sans-serif;
   }
   canvas { display:block }
   #stopBtn {
@@ -32,257 +32,253 @@
   #overlay button {
     padding:10px 20px; font-size:18px; cursor:pointer;
     background:#0c0; border:none; border-radius:5px; color:#000;
-    margin:5px;
-  }
-  #uploadSection {
-    margin-top:20px;
   }
   #uploadInput {
-    margin-top:10px;
+    margin-top: 20px;
+  }
+  #uploadList {
+    margin-top: 10px;
+    text-align: left;
+    font-size: 16px;
   }
 </style>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
-  <button id="stopBtn">Stop the Poser Audio</button>
+  <button id="stopBtn">Stop All Audio</button>
 
   <div id="overlay">
-    <h1>Firefly Frenzy: Own Mode</h1>
+    <h1>Firefly Frenzy - Own Mode</h1>
     <p id="overlayText">
-      Upload your own samples! Recommended: anime_sample1.mp3, snare.mp3, kick.mp3, etc. <br/>
-      Yellow = Snare, Green = Kick, Blue = Random Anime Sample, Orange = Amen Break (loops), Purple = Ambient Loop (loops). <br/>
-      !! Please wear headphones for MAXIMUM breakcore !! 
+      Upload your own samples! You must upload:<br><br>
+      🎵 4 Anime Samples named like anime_sample1, anime_sample2, anime_sample3, anime_sample4.mp3<br>
+      🔁 4 Loop Samples named like loop1, loop2, loop3, loop4.mp3<br><br>
+      Yellow = Snare, Green = Kick, Blue = Anime Sample, Orange = Amen Break Loop, Purple = Ambient Loop.
     </p>
+    
+    <input type="file" id="uploadInput" multiple accept="audio/*" />
+    <div id="uploadList"></div>
 
-    <div id="uploadSection">
-      <input type="file" id="uploadInput" multiple accept=".mp3" />
-      <p style="margin-top:10px;">Upload at least 4 anime samples, 1 snare, 1 kick, and a loop for best experience.</p>
-    </div>
-
-    <button id="overlayBtn">Start Breaking</button>
+    <button id="overlayBtn" disabled>Start Breaking</button>
   </div>
 
 <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-  window.addEventListener('resize', resize);
-  resize();
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+window.addEventListener('resize', resize);
+resize();
 
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const buffers = {
-    snare: null,
-    kick: null,
-    cymbal: null,
-    loop: [],
-    anime: []
-  };
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const buffers = { loop: [], anime: [] };
+const activeSources = new Set();
 
-  const activeSources = new Set();
-
-  function playOne(buffer) {
-    const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-    src.connect(audioCtx.destination);
-    activeSources.add(src);
-    src.onended = () => activeSources.delete(src);
-    src.start();
+const stopBtn = document.getElementById('stopBtn');
+stopBtn.addEventListener('click', () => {
+  for (let src of activeSources) {
+    try { src.stop(); } catch {}
   }
+  activeSources.clear();
+});
 
-  function playLoop(buffer, count) {
-    const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-    src.loop = true;
-    src.connect(audioCtx.destination);
-    activeSources.add(src);
-    src.onended = () => activeSources.delete(src);
-    src.start();
-    setTimeout(() => src.stop(), buffer.duration * count * 1000);
-  }
+let fireflies = [], score = 0, level = 1, catches = 0;
+let spawnInterval = 2000, spawnTimer = 0, lastTime = 0;
+let running = false, gameOver = false;
 
-  const stopBtn = document.getElementById('stopBtn');
-  stopBtn.addEventListener('click', () => {
-    for (let src of activeSources) {
-      try { src.stop(); } catch {}
-    }
-    activeSources.clear();
-  });
+const overlay = document.getElementById('overlay');
+const overlayBtn = document.getElementById('overlayBtn');
 
-  let fireflies = [], score = 0, level = 1, catches = 0;
-  let spawnInterval = 2000, spawnTimer = 0, lastTime = 0;
-  let running = false, gameOver = false;
+let mouse = { x: 0, y: 0, down: false };
+canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mousedown', () => mouse.down = true);
+canvas.addEventListener('mouseup', () => mouse.down = false);
 
-  const overlay = document.getElementById('overlay');
-  const overlayBtn = document.getElementById('overlayBtn');
-
-  let mouse = { x: 0, y: 0, down: false };
-  canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  canvas.addEventListener('mousedown', () => mouse.down = true);
-  canvas.addEventListener('mouseup', () => mouse.down = false);
-
-  // ---- Upload Handling ----
-  const uploadInput = document.getElementById('uploadInput');
-  uploadInput.addEventListener('change', (event) => {
-    const files = event.target.files;
-    for (let file of files) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        audioCtx.decodeAudioData(e.target.result).then(buffer => {
-          if (file.name.includes('snare')) {
-            buffers.snare = buffer;
-          } else if (file.name.includes('kick')) {
-            buffers.kick = buffer;
-          } else if (file.name.includes('loop')) {
-            buffers.loop.push(buffer);
-          } else if (file.name.includes('cymbal') || file.name.includes('amen')) {
-            buffers.cymbal = buffer;
-          } else if (file.name.includes('anime')) {
-            buffers.anime.push(buffer);
-          } else {
-            console.warn('Unknown file type:', file.name);
-          }
-        }).catch(err => console.error('Decode error', err));
-      };
-      reader.readAsArrayBuffer(file);
-    }
-  });
-
-  class Firefly {
-    constructor() {
-      this.r = 5 + Math.random() * 5;
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.vx = (Math.random() - 0.5) * (1 + 0.2 * level);
-      this.vy = (Math.random() - 0.5) * (1 + 0.2 * level);
-
-      let types = ['snare', 'kick', 'hihat', 'cymbal'];
-      if (!fireflies.some(f => f.type === 'loop')) types.push('loop');
-
-      this.type = types[Math.floor(Math.random() * types.length)];
-      switch (this.type) {
-        case 'snare':
-          this.colStart = 'rgba(255, 255, 180, 0.8)'; 
-          this.colEnd = 'rgba(255, 255, 180, 0)';
-          this.buf = buffers.snare; this.scoreVal = 1;
-          break;
-        case 'kick':
-          this.colStart = 'rgba(180, 255, 180, 0.8)';
-          this.colEnd = 'rgba(180, 255, 180, 0)';
-          this.buf = buffers.kick; this.scoreVal = 1;
-          break;
-        case 'hihat':
-          this.colStart = 'rgba(180, 220, 255, 0.8)';
-          this.colEnd = 'rgba(180, 220, 255, 0)';
-          if (buffers.anime.length > 0) {
-            this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
-          }
-          this.scoreVal = 1;
-          break;
-        case 'cymbal':
-          this.colStart = 'rgba(255, 210, 170, 0.8)';
-          this.colEnd = 'rgba(255, 210, 170, 0)';
-          this.buf = buffers.cymbal; this.scoreVal = 1;
-          break;
-        case 'loop':
-          this.colStart = 'rgba(220, 180, 255, 0.8)';
-          this.colEnd = 'rgba(220, 180, 255, 0)';
-          if (buffers.loop.length > 0) {
-            this.buf = buffers.loop[Math.floor(Math.random() * buffers.loop.length)];
-          }
-          this.scoreVal = 2;
-          break;
-      }
-    }
-    update(dt) {
-      this.x += this.vx * dt / 16;
-      this.y += this.vy * dt / 16;
-      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-    }
-    draw() {
-      ctx.beginPath();
-      ctx.fillStyle = this.colStart;
-      ctx.arc(this.x, this.y, this.r * 2, 0, 2 * Math.PI);
-      ctx.fill();
+class Firefly {
+  constructor() {
+    this.r = 5 + Math.random() * 5;
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.vx = (Math.random() - 0.5) * (1 + 0.2 * level);
+    this.vy = (Math.random() - 0.5) * (1 + 0.2 * level);
+    let types = ['snare', 'kick', 'hihat', 'cymbal'];
+    if (!fireflies.some(f => f.type === 'loop')) types.push('loop');
+    this.type = types[Math.floor(Math.random() * types.length)];
+    switch (this.type) {
+      case 'snare':
+        this.colStart = 'rgba(255, 255, 180, 0.8)'; 
+        this.colEnd = 'rgba(255, 255, 180, 0)';
+        this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
+        this.scoreVal = 1;
+        break;
+      case 'kick':
+        this.colStart = 'rgba(180, 255, 180, 0.8)';
+        this.colEnd = 'rgba(180, 255, 180, 0)';
+        this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
+        this.scoreVal = 1;
+        break;
+      case 'hihat':
+        this.colStart = 'rgba(180, 220, 255, 0.8)';
+        this.colEnd = 'rgba(180, 220, 255, 0)';
+        this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
+        this.scoreVal = 1;
+        break;
+      case 'cymbal':
+        this.colStart = 'rgba(255, 210, 170, 0.8)';
+        this.colEnd = 'rgba(255, 210, 170, 0)';
+        this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
+        this.scoreVal = 1;
+        break;
+      case 'loop':
+        this.colStart = 'rgba(220, 180, 255, 0.8)';
+        this.colEnd = 'rgba(220, 180, 255, 0)';
+        this.buf = buffers.loop[Math.floor(Math.random() * buffers.loop.length)];
+        this.scoreVal = 2;
+        break;
     }
   }
-
-  function spawnFirefly() {
-    fireflies.push(new Firefly());
+  update(dt) {
+    this.x += this.vx * dt / 16;
+    this.y += this.vy * dt / 16;
+    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
   }
-
-  function resetGame() {
-    fireflies = [];
-    score = 0; level = 1; catches = 0;
-    spawnInterval = 2000; spawnTimer = 0;
-    gameOver = false;
+  draw() {
+    ctx.beginPath();
+    ctx.fillStyle = this.colStart;
+    ctx.arc(this.x, this.y, this.r * 2, 0, 2 * Math.PI); 
+    ctx.fill();
   }
+}
 
-  overlayBtn.addEventListener('click', () => {
-    if (!running || gameOver) {
-      overlay.classList.add('hidden');
-      resetGame();
-      running = true; lastTime = performance.now();
-      for (let i = 0; i < 5; i++) spawnFirefly();
-      requestAnimationFrame(gameLoop);
-    }
-  });
+function spawnFirefly() { fireflies.push(new Firefly()); }
 
-  function showGameOver() {
-    running = false; gameOver = true;
-    overlay.querySelector('p').textContent = `Game Over! Final Score: ${score}`;
-    overlayBtn.textContent = 'Remix Again';
-    overlay.classList.remove('hidden');
+function resetGame() {
+  fireflies = [];
+  score = 0; level = 1; catches = 0;
+  spawnInterval = 2000; spawnTimer = 0;
+  gameOver = false;
+}
+
+overlayBtn.addEventListener('click', () => {
+  if (buffers.anime.length < 4) {
+    alert("Anime samples are mandatory. Please upload at least 4 anime samples.");
+    return;
   }
-
-  const backgrounds = ['poser1.gif', 'poser2.gif', 'poser3.gif', 'poser4.gif'];
-  let current = 0;
-  setInterval(() => {
-    current = (current + 1) % backgrounds.length;
-    document.body.style.backgroundImage = `url('${backgrounds[current]}')`;
-  }, 5000);
-
-  function gameLoop(now) {
-    if (!running) return;
-    const dt = now - lastTime; lastTime = now;
-    spawnTimer += dt;
-    if (spawnTimer > spawnInterval) {
-      spawnFirefly();
-      spawnTimer -= spawnInterval;
-    }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = fireflies.length - 1; i >= 0; i--) {
-      const f = fireflies[i];
-      f.update(dt);
-      if (mouse.down) {
-        const dx = f.x - mouse.x, dy = f.y - mouse.y;
-        if (Math.hypot(dx, dy) < f.r * 4) {
-          if (f.type === 'cymbal' || f.type === 'loop') {
-            playLoop(f.buf, 16);
-          } else {
-            playOne(f.buf);
-          }
-          fireflies.splice(i, 1);
-          score += f.scoreVal;
-          catches++;
-          if (catches >= 10) {
-            level++; catches = 0;
-            spawnInterval = Math.max(500, spawnInterval * 0.9);
-          }
-          if (level > 10) showGameOver();
-        }
-      }
-      f.draw();
-    }
-    if (mouse.down) {
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-      ctx.lineWidth = 2;
-      ctx.arc(mouse.x, mouse.y, 30, 0, 2 * Math.PI);
-      ctx.stroke();
-    }
+  if (buffers.loop.length < 4) {
+    alert("Loops are mandatory. Please upload at least 4 loop samples.");
+    return;
+  }
+  if (!running || gameOver) {
+    overlay.classList.add('hidden');
+    resetGame();
+    running = true; lastTime = performance.now();
+    for (let i = 0; i < 5; i++) spawnFirefly();
     requestAnimationFrame(gameLoop);
   }
+});
+
+function showGameOver() {
+  running = false; gameOver = true;
+  overlay.querySelector('p').textContent = `Game Over! Final Score: ${score}`;
+  overlayBtn.textContent = 'Remix Again';
+  overlay.classList.remove('hidden');
+}
+
+const backgrounds = ['poser1.gif', 'poser2.gif', 'poser3.gif', 'poser4.gif'];
+let current = 0;
+setInterval(() => {
+  current = (current + 1) % backgrounds.length;
+  document.body.style.backgroundImage = `url('${backgrounds[current]}')`;
+}, 5000);
+
+function gameLoop(now) {
+  if (!running) return;
+  const dt = now - lastTime; lastTime = now;
+  spawnTimer += dt;
+  if (spawnTimer > spawnInterval) {
+    spawnFirefly();
+    spawnTimer -= spawnInterval;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = fireflies.length - 1; i >= 0; i--) {
+    const f = fireflies[i];
+    f.update(dt);
+    if (mouse.down) {
+      const dx = f.x - mouse.x, dy = f.y - mouse.y;
+      if (Math.hypot(dx, dy) < f.r * 4) {
+        playOne(f.buf);
+        fireflies.splice(i, 1);
+        score += f.scoreVal;
+        catches++;
+        if (catches >= 10) {
+          level++; catches = 0;
+          spawnInterval = Math.max(500, spawnInterval * 0.9);
+        }
+        if (level > 10) showGameOver();
+      }
+    }
+    f.draw();
+  }
+  if (mouse.down) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 2;
+    ctx.arc(mouse.x, mouse.y, 30, 0, 2 * Math.PI);
+    ctx.stroke();
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+function playOne(buffer) {
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(audioCtx.destination);
+  activeSources.add(src);
+  src.onended = () => activeSources.delete(src);
+  src.start();
+}
+
+// Upload system
+const uploadInput = document.getElementById('uploadInput');
+const uploadList = document.getElementById('uploadList');
+
+uploadInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  let animeFilesUploaded = 0;
+  let loopFilesUploaded = 0;
+  buffers.anime = [];
+  buffers.loop = [];
+
+  const uploadPromises = files.map(file => {
+    return file.arrayBuffer()
+      .then(data => audioCtx.decodeAudioData(data))
+      .then(buffer => {
+        if (file.name.toLowerCase().includes('anime')) {
+          buffers.anime.push(buffer);
+          animeFilesUploaded++;
+        } else if (file.name.toLowerCase().includes('loop')) {
+          buffers.loop.push(buffer);
+          loopFilesUploaded++;
+        }
+      })
+      .catch(err => console.error(`Error loading ${file.name}:`, err));
+  });
+
+  Promise.all(uploadPromises).then(() => {
+    uploadList.innerHTML = `
+      <strong>Uploaded Files:</strong><br>
+      🎵 Anime Samples (${animeFilesUploaded}) ${animeFilesUploaded >= 4 ? "✅" : "❌"}<br>
+      ${files.filter(f => f.name.toLowerCase().includes('anime')).map(f => `- ${f.name}`).join('<br>')}
+      <br><br>
+      🔁 Loops (${loopFilesUploaded}) ${loopFilesUploaded >= 4 ? "✅" : "❌"}<br>
+      ${files.filter(f => f.name.toLowerCase().includes('loop')).map(f => `- ${f.name}`).join('<br>')}
+    `;
+
+    overlayBtn.disabled = !(animeFilesUploaded >= 4 && loopFilesUploaded >= 4);
+  });
+});
 </script>
 </body>
 </html>
