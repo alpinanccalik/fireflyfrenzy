@@ -29,15 +29,10 @@
   </style>
 </head>
 <body>
-  <div class="hud">
-    <div id="score">Score: 0</div>
-    <div id="lives">Lives: 3</div>
-    <div id="level">Level: 1</div>
-  </div>
   <canvas id="gameCanvas"></canvas>
   <div id="overlay">
     <h1>Firefly DJ Frenzy</h1>
-    <p id="overlayText">Let's see if you can make some music happen! Yellow = snare, Green = kick, Blue = hihat, Orange = cymbal, Purple = random loops.</p>
+    <p id="overlayText">Yellow = Snare, Green = Kick, Blue = Does Nothing Because Why Not, Orange = Amen Break (plays 4×), Purple = Random Loop 2/3/4.</p>
     <button id="overlayBtn">Start Mixing</button>
   </div>
 
@@ -45,16 +40,17 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-    window.addEventListener('resize', resize); resize();
+    window.addEventListener('resize', resize);
+    resize();
 
     // Audio assets
     const sounds = {
       snare: new Audio('snare.mp3'),
       kick: new Audio('kick.mp3'),
-      hihat: new Audio('hihat.mp3'),
-      cymbal: new Audio('beat.mp3'),
-      loop: new Audio('loop.mp3')
+      cymbal: new Audio('beat.mp3')
     };
+    const loopFiles = ['loop2.mp3', 'loop3.mp3', 'loop4.mp3'];
+    const loopSounds = loopFiles.map(f => new Audio(f));
 
     // Game state
     let fireflies = [], score = 0, lives = 3, level = 1;
@@ -81,11 +77,11 @@
         this.y = Math.random() * canvas.height;
         this.vx = (Math.random() - 0.5) * (1 + level * 0.2);
         this.vy = (Math.random() - 0.5) * (1 + level * 0.2);
-        // Build type list: allow one loop only
+        // Determine types (only one purple loop)
         const types = ['snare', 'kick', 'hihat', 'cymbal'];
         if (!fireflies.some(f => f.type === 'loop')) types.push('loop');
         this.type = types[Math.floor(Math.random() * types.length)];
-        // Assign color & audio
+        // Assign color & audio & score
         switch (this.type) {
           case 'snare':
             this.colorStart = 'rgba(255,255,0,0.9)'; this.colorEnd = 'rgba(255,255,0,0)'; this.audio = sounds.snare; this.scoreValue = 1; break;
@@ -96,7 +92,10 @@
           case 'cymbal':
             this.colorStart = 'rgba(255,165,0,0.9)'; this.colorEnd = 'rgba(255,165,0,0)'; this.audio = sounds.cymbal; this.scoreValue = 1; break;
           case 'loop':
-            this.colorStart = 'rgba(200,0,255,0.9)'; this.colorEnd = 'rgba(200,0,255,0)'; this.audio = sounds.loop; this.scoreValue = 2; break;
+            this.colorStart = 'rgba(200,0,255,0.9)'; this.colorEnd = 'rgba(200,0,255,0)';
+            this.audio = loopSounds[Math.floor(Math.random() * loopSounds.length)];
+            this.scoreValue = 2;
+            break;
         }
       }
       update(dt) {
@@ -166,7 +165,18 @@
         if (mouse.down) {
           const dx = f.x - mouse.x, dy = f.y - mouse.y;
           if (Math.hypot(dx, dy) < f.radius * 4) {
-            f.audio.currentTime = 0; f.audio.play();
+            if (f.type === 'cymbal') {
+              let loops = 4;
+              const playOnce = () => {
+                f.audio.currentTime = 0; f.audio.play(); loops--;
+                if (loops > 0) {
+                  f.audio.addEventListener('ended', playOnce, { once: true });
+                }
+              };
+              playOnce();
+            } else {
+              f.audio.currentTime = 0; f.audio.play();
+            }
             fireflies.splice(i, 1);
             score += f.scoreValue;
             catchesThisLevel++;
