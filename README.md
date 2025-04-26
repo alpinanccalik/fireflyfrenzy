@@ -1,2 +1,2 @@
 # fireflyfrenzy
-Procedurally generated music with the help of you
+Now you can also be a "breakcore" artist.
