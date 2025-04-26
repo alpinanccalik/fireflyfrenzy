@@ -10,7 +10,7 @@
       overflow:hidden; 
       background-color: #1f1f2e; 
       transition: background-color 1s ease-in-out;
-      color:#fff; 
+      color: #f0e6f6; 
       font-family:sans-serif; 
       position: relative;
     }
@@ -111,7 +111,7 @@
     function loadBuffer(url, target, key) {
       fetch(url)
         .then(r => {
-          if (!r.ok) throw new Error(HTTP ${r.status});
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.arrayBuffer();
         })
         .then(data => audioCtx.decodeAudioData(data))
@@ -120,7 +120,7 @@
           else if (target === 'anime') buffers.anime.push(buf);
           else buffers[key] = buf;
         })
-        .catch(err => console.error(Failed to load ${url}:, err))
+        .catch(err => console.error(`Failed to load ${url}:`, err))
         .finally(checkAllLoaded);
     }
 
@@ -242,7 +242,7 @@
 
     function showGameOver() {
       running = false; gameOver = true;
-      overlay.querySelector('p').textContent = Game Over! Final Score: ${score};
+      overlay.querySelector('p').textContent = `Game Over! Final Score: ${score}`;
       overlayBtn.textContent = 'Remix Again';
       overlay.classList.remove('hidden');
     }
