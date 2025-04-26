@@ -9,11 +9,12 @@
     body {
       background: url('poser1.gif') center center / cover no-repeat;
       background-size: cover;
-      overflow: hidden;
       font-family: sans-serif;
       color: #fff;
       text-align: center;
       padding: 20px;
+      overflow-y: scroll; 
+      position: relative;
     }
     h1 {
       font-size: 32px;
@@ -70,65 +71,90 @@
     #startBtn:hover:enabled {
       background: #0a0;
     }
-    canvas { display: none; }
+
+    /* Black overlay to make circles more visible */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6); /* semi-transparent black */
+      z-index: 1;
+    }
+
+    canvas { 
+      display: block;
+      position: absolute;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2; /* Ensures content stays above overlay */
+    }
   </style>
 </head>
 <body>
 
-  <h1>Firefly Frenzy - Own Mode</h1>
-  <p>Upload your own samples. Make sure loops and break are same BPM!</p>
+  <div id="overlay"></div> <!-- Black overlay for better visibility -->
 
-  <div id="uploadSection">
-    <div class="uploader">
-      <label for="anime1">Upload Anime Sample 1</label>
-      <input type="file" id="anime1" accept="audio/mp3">
-      <div id="anime1Status" class="uploaded"></div>
-    </div>
-    <div class="uploader">
-      <label for="anime2">Upload Anime Sample 2</label>
-      <input type="file" id="anime2" accept="audio/mp3">
-      <div id="anime2Status" class="uploaded"></div>
-    </div>
-    <div class="uploader">
-      <label for="anime3">Upload Anime Sample 3</label>
-      <input type="file" id="anime3" accept="audio/mp3">
-      <div id="anime3Status" class="uploaded"></div>
-    </div>
-    <div class="uploader">
-      <label for="anime4">Upload Anime Sample 4</label>
-      <input type="file" id="anime4" accept="audio/mp3">
-      <div id="anime4Status" class="uploaded"></div>
-    </div>
+  <div class="content">
+    <h1>Firefly Frenzy - Own Mode</h1>
+    <p>Upload your own samples. Make sure loops and break are same BPM!</p>
 
-    <div class="uploader">
-      <label for="loop1">Upload Loop 1</label>
-      <input type="file" id="loop1" accept="audio/mp3">
-      <div id="loop1Status" class="uploaded"></div>
-    </div>
-    <div class="uploader">
-      <label for="loop2">Upload Loop 2</label>
-      <input type="file" id="loop2" accept="audio/mp3">
-      <div id="loop2Status" class="uploaded"></div>
-    </div>
-    <div class="uploader">
-      <label for="loop3">Upload Loop 3</label>
-      <input type="file" id="loop3" accept="audio/mp3">
-      <div id="loop3Status" class="uploaded"></div>
-    </div>
-    <div class="uploader">
-      <label for="loop4">Upload Loop 4</label>
-      <input type="file" id="loop4" accept="audio/mp3">
-      <div id="loop4Status" class="uploaded"></div>
-    </div>
+    <div id="uploadSection">
+      <div class="uploader">
+        <label for="anime1">Upload Anime Sample 1</label>
+        <input type="file" id="anime1" accept="audio/mp3">
+        <div id="anime1Status" class="uploaded"></div>
+      </div>
+      <div class="uploader">
+        <label for="anime2">Upload Anime Sample 2</label>
+        <input type="file" id="anime2" accept="audio/mp3">
+        <div id="anime2Status" class="uploaded"></div>
+      </div>
+      <div class="uploader">
+        <label for="anime3">Upload Anime Sample 3</label>
+        <input type="file" id="anime3" accept="audio/mp3">
+        <div id="anime3Status" class="uploaded"></div>
+      </div>
+      <div class="uploader">
+        <label for="anime4">Upload Anime Sample 4</label>
+        <input type="file" id="anime4" accept="audio/mp3">
+        <div id="anime4Status" class="uploaded"></div>
+      </div>
 
-    <div class="uploader">
-      <label for="amenBreak">Upload Amen Break</label>
-      <input type="file" id="amenBreak" accept="audio/mp3">
-      <div id="amenBreakStatus" class="uploaded"></div>
-    </div>
+      <div class="uploader">
+        <label for="loop1">Upload Loop 1</label>
+        <input type="file" id="loop1" accept="audio/mp3">
+        <div id="loop1Status" class="uploaded"></div>
+      </div>
+      <div class="uploader">
+        <label for="loop2">Upload Loop 2</label>
+        <input type="file" id="loop2" accept="audio/mp3">
+        <div id="loop2Status" class="uploaded"></div>
+      </div>
+      <div class="uploader">
+        <label for="loop3">Upload Loop 3</label>
+        <input type="file" id="loop3" accept="audio/mp3">
+        <div id="loop3Status" class="uploaded"></div>
+      </div>
+      <div class="uploader">
+        <label for="loop4">Upload Loop 4</label>
+        <input type="file" id="loop4" accept="audio/mp3">
+        <div id="loop4Status" class="uploaded"></div>
+      </div>
 
-    <div id="warning">All uploads are mandatory!</div>
-    <button id="startBtn" disabled>Start Breaking</button>
+      <div class="uploader">
+        <label for="amenBreak">Upload Amen Break</label>
+        <input type="file" id="amenBreak" accept="audio/mp3">
+        <div id="amenBreakStatus" class="uploaded"></div>
+      </div>
+
+      <div id="warning">All uploads are mandatory!</div>
+      <button id="startBtn" disabled>Start Breaking</button>
+    </div>
   </div>
 
   <canvas id="gameCanvas"></canvas>
