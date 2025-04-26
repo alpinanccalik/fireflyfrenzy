@@ -49,6 +49,7 @@
       Purple = Random Ambient Loop2/3/4 (loops seamlessly) </br>
     </p>
     <button id="overlayBtn">Start Breaking</button>
+    <button id="ownModeBtn" style="margin-top:10px;">Your Own Mode</button>
   </div>
 
   <script>
@@ -145,6 +146,11 @@
     const overlay = document.getElementById('overlay');
     const overlayBtn = document.getElementById('overlayBtn');
     overlayBtn.disabled = false;
+
+    const ownModeBtn = document.getElementById('ownModeBtn');
+    ownModeBtn.addEventListener('click', () => {
+      window.location.href = 'ownmode.html';
+    });
 
     let mouse = { x: 0, y: 0, down: false };
     canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
