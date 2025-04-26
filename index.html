@@ -159,7 +159,6 @@
         this.vx = (Math.random() - 0.5) * (1 + 0.2 * level);
         this.vy = (Math.random() - 0.5) * (1 + 0.2 * level);
         let types = ['snare', 'kick', 'hihat', 'cymbal'];
-        if (!fireflies.some(f => f.type === 'loop')) types.push('loop');
         this.type = types[Math.floor(Math.random() * types.length)];
         switch (this.type) {
           case 'snare':
