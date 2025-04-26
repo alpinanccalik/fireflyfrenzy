@@ -12,7 +12,7 @@
     }
 
     body {
-      background-color: #1f1f2e; /* pastel dark color */
+      background-color: #1f1f2e; 
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #f5f5f5;
       text-align: center;
@@ -24,7 +24,7 @@
     h1 {
       font-size: 36px;
       margin-bottom: 20px;
-      color: #ffcccb; /* pastel pink for the title */
+      color: #ffcccb; 
     }
 
     p {
@@ -40,7 +40,7 @@
     label {
       display: inline-block;
       padding: 12px 25px;
-      background: #8e7cc3; /* soft purple background */
+      background: #8e7cc3; 
       color: #fff;
       border-radius: 8px;
       cursor: pointer;
@@ -304,7 +304,12 @@
       let running = true;
 
       let mouse = { x: 0, y: 0, down: false };
-      canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+      });
+
       canvas.addEventListener('mousedown', () => mouse.down = true);
       canvas.addEventListener('mouseup', () => mouse.down = false);
 
