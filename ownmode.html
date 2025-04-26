@@ -5,40 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Firefly Frenzy - Own Mode</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box }
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      background: url('poser1.gif') center center / cover no-repeat;
-      background-size: cover;
-      font-family: sans-serif;
-      color: #fff;
+      background-color: #1f1f2e; /* pastel dark color */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #f5f5f5;
       text-align: center;
-      padding: 20px;
-      overflow-y: scroll; 
+      padding: 40px;
+      overflow-y: scroll;
       position: relative;
     }
     h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #ffcccb; /* pastel pink for the title */
     }
     p {
       font-size: 18px;
       margin-bottom: 25px;
+      color: #f0f0f0;
     }
     .uploader {
-      margin: 10px 0;
+      margin: 15px 0;
     }
     label {
       display: inline-block;
-      padding: 10px 20px;
-      background: #0c0;
-      color: #000;
-      border-radius: 5px;
+      padding: 12px 25px;
+      background: #8e7cc3; /* soft purple background */
+      color: #fff;
+      border-radius: 8px;
       cursor: pointer;
       margin-bottom: 5px;
-      transition: background 0.3s;
+      font-weight: bold;
+      transition: background 0.3s, transform 0.3s;
     }
     label:hover {
-      background: #0a0;
+      background: #7a6bb8;
+      transform: scale(1.05);
     }
     input[type="file"] {
       display: none;
@@ -46,62 +49,59 @@
     .uploaded {
       margin-top: 5px;
       font-size: 14px;
-      color: #0f0;
+      color: #b3e0c2; /* soft green text */
     }
     #warning {
       margin-top: 15px;
       font-size: 16px;
-      color: #ff0;
+      color: #ffdd00; /* warning color */
     }
     #startBtn {
       margin-top: 20px;
-      padding: 12px 24px;
-      background: #0c0;
+      padding: 14px 30px;
+      background: #ff6f61; /* coral red button */
       border: none;
-      border-radius: 5px;
-      color: #000;
-      font-size: 18px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 20px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.3s, transform 0.3s;
     }
     #startBtn:disabled {
       background: #666;
       cursor: not-allowed;
     }
     #startBtn:hover:enabled {
-      background: #0a0;
+      background: #ff5a47;
+      transform: scale(1.05);
     }
-
-    /* Black overlay to make circles more visible */
     #overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.6); /* semi-transparent black */
+      background-color: rgba(0, 0, 0, 0.6); 
       z-index: 1;
     }
-
     canvas { 
       display: block;
       position: absolute;
       z-index: 0;
     }
-
     .content {
       position: relative;
-      z-index: 2; /* Ensures content stays above overlay */
+      z-index: 2;
     }
   </style>
 </head>
 <body>
 
-  <div id="overlay"></div> <!-- Black overlay for better visibility -->
+  <div id="overlay"></div>
 
   <div class="content">
     <h1>Firefly Frenzy - Own Mode</h1>
-    <p>Upload your own samples. Make sure loops and break are same BPM!</p>
+    <p>Upload your own samples. Make sure loops and break are the same BPM!</p>
 
     <div id="uploadSection">
       <div class="uploader">
@@ -190,11 +190,11 @@
       const startBtn = document.getElementById('startBtn');
       if (allDone) {
         warning.textContent = 'All samples uploaded. Ready!';
-        warning.style.color = '#0f0';
+        warning.style.color = '#b3e0c2'; // soft green for ready
         startBtn.disabled = false;
       } else {
         warning.textContent = 'All uploads are mandatory!';
-        warning.style.color = '#ff0';
+        warning.style.color = '#ffdd00'; // warning color
         startBtn.disabled = true;
       }
     }
@@ -225,7 +225,6 @@
         }
         buffers.amen = await loadFile(uploaded['amenBreak']);
 
-        // Start the game now
         document.getElementById('uploadSection').style.display = 'none';
         startGame();
       } catch (err) {
