@@ -41,14 +41,14 @@
   <div id="overlay">
     <h1>Firefly Frenzy</h1>
     <p id="overlayText">
-      You are a newcomer breakcore artist... So an incel. You discovered the genre from Reddit and /mu/ threads. And your favorite breakcore artist are Sewerslvt and Goreshit. </br>
+      You are a newcomer "breakcore" artist. You discovered the genre from Reddit and /mu/ threads. And your favorite breakcore artist are Sewerslvt and Goreshit. </br>
       !! ANIME GIRL SAMPLES. PLEASE FOR THE LOVE OF GOD WEAR HEADPHONES !! </br>
-      Yellow = Snare, Green = Kick,  
-      Blue = Random Anime Sample (1–4),  
-      Orange = Amen Break (loops),  
-      Purple = Random Ambient Loop2/3/4 (loops seamlessly)
+      Yellow = Snare, Green = Kick, </br>
+      Blue = Random Anime Sample (1–4), </br>  
+      Orange = Amen Break (loops), </br>
+      Purple = Random Ambient Loop2/3/4 (loops seamlessly) </br>
     </p>
-    <button id="overlayBtn" enabled="">Start Breaking</button>
+    <button id="overlayBtn">Start Breaking</button>
   </div>
 
   <script>
@@ -82,7 +82,7 @@
 
     function checkAllLoaded() {
       if (++loadedCount === totalToLoad) {
-        overlayBtn.disabled = true;
+        overlayBtn.disabled = false;
       }
     }
 
@@ -144,7 +144,7 @@
 
     const overlay = document.getElementById('overlay');
     const overlayBtn = document.getElementById('overlayBtn');
-    overlayBtn.disabled = true;
+    overlayBtn.disabled = false;
 
     let mouse = { x: 0, y: 0, down: false };
     canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
@@ -163,29 +163,29 @@
         this.type = types[Math.floor(Math.random() * types.length)];
         switch (this.type) {
           case 'snare':
-            this.colStart = 'rgba(255,255,0,0.9)';
-            this.colEnd = 'rgba(255,255,0,0)';
+            this.colStart = 'rgba(255, 255, 180, 0.8)'; 
+            this.colEnd = 'rgba(255, 255, 180, 0)';
             this.buf = buffers.snare; this.scoreVal = 1;
             break;
           case 'kick':
-            this.colStart = 'rgba(0,255,0,0.9)';
-            this.colEnd = 'rgba(0,255,0,0)';
+            this.colStart = 'rgba(180, 255, 180, 0.8)';
+            this.colEnd = 'rgba(180, 255, 180, 0)';
             this.buf = buffers.kick; this.scoreVal = 1;
             break;
           case 'hihat':
-            this.colStart = 'rgba(0,200,255,0.9)';
-            this.colEnd = 'rgba(0,200,255,0)';
+            this.colStart = 'rgba(180, 220, 255, 0.8)';
+            this.colEnd = 'rgba(180, 220, 255, 0)';
             this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
             this.scoreVal = 1;
             break;
           case 'cymbal':
-            this.colStart = 'rgba(255,165,0,0.9)';
-            this.colEnd = 'rgba(255,165,0,0)';
+            this.colStart = 'rgba(255, 210, 170, 0.8)';
+            this.colEnd = 'rgba(255, 210, 170, 0)';
             this.buf = buffers.cymbal; this.scoreVal = 1;
             break;
           case 'loop':
-            this.colStart = 'rgba(200,0,255,0.9)';
-            this.colEnd = 'rgba(200,0,255,0)';
+            this.colStart = 'rgba(220, 180, 255, 0.8)';
+            this.colEnd = 'rgba(220, 180, 255, 0)';
             this.buf = buffers.loop[Math.floor(Math.random() * buffers.loop.length)];
             this.scoreVal = 2;
             break;
@@ -198,12 +198,9 @@
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
       }
       draw() {
-        const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4);
-        g.addColorStop(0, this.colStart);
-        g.addColorStop(1, this.colEnd);
         ctx.beginPath();
-        ctx.fillStyle = g;
-        ctx.arc(this.x, this.y, this.r * 4, 0, 2 * Math.PI);
+         ctx.fillStyle = this.colStart;
+        ctx.arc(this.x, this.y, this.r * 2, 0, 2 * Math.PI); 
         ctx.fill();
       }
     }
