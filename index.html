@@ -32,10 +32,11 @@
   <canvas id="gameCanvas"></canvas>
   <button id="stopBtn">Stop the Poser Audio</button>
   <div id="overlay">
-    <h1></h1>
+    <h1>Firefly Frenzy</h1>
     <p id="overlayText">
-      You are a newcoming breakcore artist... So an incel. You discovered the genre from Reddit and /mu/ threads. And your favorite breakcore artist is Sewerslvt or Goreshit.
-      Yellow = Snare, Green = Kick, Blue = Random Anime Samples,  
+      You are a newcomer breakcore artist... So an incel. You discovered the genre from Reddit and /mu/ threads. And your favorite breakcore artist are Sewerslvt and Goreshit.
+      Yellow = Snare, Green = Kick,  
+      Blue = Random Anime Sample (1–4),  
       Orange = Amen Break (plays 4×),  
       Purple = Random Ambient Loop2/3/4 (plays 8× seamlessly)
     </p>
@@ -43,212 +44,229 @@
   </div>
 
   <script>
-    
     const canvas = document.getElementById('gameCanvas');
-    const ctx    = canvas.getContext('2d');
-    function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; }
-    window.addEventListener('resize',resize);
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    window.addEventListener('resize', resize);
     resize();
 
-    const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const audioFiles = {
       snare: 'snare.mp3',
-      kick:  'kick.mp3',
-      hihat: 'hihat.mp3',
-      cymbal:'beat.mp3'
+      kick: 'kick.mp3',
+      cymbal: 'beat.mp3'
     };
-    const loopFiles = ['loop2.mp3','loop3.mp3','loop4.mp3'];
-    const buffers = { loop: [] };
-    let loadedCount = 0, totalToLoad = Object.keys(audioFiles).length + loopFiles.length;
+    const animeFiles = [
+      'anime_sample1.mp3',
+      'anime_sample2.mp3',
+      'anime_sample3.mp3',
+      'anime_sample4.mp3'
+    ];
+    const loopFiles = ['loop.mp3', 'loop2.mp3', 'loop3.mp3', 'loop4.mp3'];
 
-    function checkAllLoaded(){
+    const buffers = {
+      loop: [],
+      anime: []
+    };
+
+    let loadedCount = 0;
+    const totalToLoad = Object.keys(audioFiles).length + animeFiles.length + loopFiles.length;
+
+    function checkAllLoaded() {
       if (++loadedCount === totalToLoad) {
-        document.getElementById('overlayBtn').disabled = false;
+        overlayBtn.disabled = false;
       }
     }
 
-    // load one file into a buffer
-    function loadBuffer(url, target, key){
+    function loadBuffer(url, target, key) {
       fetch(url)
-        .then(r=>r.arrayBuffer())
-        .then(data=>audioCtx.decodeAudioData(data))
-        .then(buf=>{
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.arrayBuffer();
+        })
+        .then(data => audioCtx.decodeAudioData(data))
+        .then(buf => {
           if (target === 'loop') buffers.loop.push(buf);
+          else if (target === 'anime') buffers.anime.push(buf);
           else buffers[key] = buf;
-          checkAllLoaded();
-        });
+        })
+        .catch(err => console.error(`Failed to load ${url}:`, err))
+        .finally(checkAllLoaded);
     }
 
     for (let [k, url] of Object.entries(audioFiles)) {
       loadBuffer(url, k, k);
     }
+    animeFiles.forEach(url => loadBuffer(url, 'anime'));
     loopFiles.forEach(url => loadBuffer(url, 'loop'));
 
     const activeSources = new Set();
 
-    // play a one-shot (snare/kick/hihat/cymbal)
-    function playOne(buffer){
+    function playOne(buffer) {
       const src = audioCtx.createBufferSource();
       src.buffer = buffer;
       src.connect(audioCtx.destination);
       activeSources.add(src);
-      src.onended = ()=> activeSources.delete(src);
+      src.onended = () => activeSources.delete(src);
       src.start();
     }
-    function playLoop(buffer, count){
+
+    function playLoop(buffer, count) {
       const src = audioCtx.createBufferSource();
       src.buffer = buffer;
       src.loop = true;
       src.connect(audioCtx.destination);
       activeSources.add(src);
-      src.onended = ()=> activeSources.delete(src);
+      src.onended = () => activeSources.delete(src);
       src.start();
-      setTimeout(()=> src.stop(), buffer.duration * count * 1000);
+      setTimeout(() => src.stop(), buffer.duration * count * 1000);
     }
 
-    document.getElementById('stopBtn').addEventListener('click', ()=>{
-      for (let src of activeSources){
-        try { src.stop(); } catch{}
+    const stopBtn = document.getElementById('stopBtn');
+    stopBtn.addEventListener('click', () => {
+      for (let src of activeSources) {
+        try { src.stop(); } catch {}
       }
       activeSources.clear();
     });
 
-    let fireflies = [], score=0, level=1, catches=0;
-    let spawnInterval=2000, spawnTimer=0, lastTime=0;
-    let running=false, gameOver=false;
-    const overlay    = document.getElementById('overlay');
-    const overlayBtn = document.getElementById('overlayBtn');
-    overlayBtn.disabled = true; 
+    let fireflies = [], score = 0, level = 1, catches = 0;
+    let spawnInterval = 2000, spawnTimer = 0, lastTime = 0;
+    let running = false, gameOver = false;
 
-    let mouse = { x:0, y:0, down:false };
-    canvas.addEventListener('mousemove',e=>{ mouse.x=e.clientX; mouse.y=e.clientY; });
-    canvas.addEventListener('mousedown',()=>mouse.down=true);
-    canvas.addEventListener('mouseup',()=>mouse.down=false);
+    const overlay = document.getElementById('overlay');
+    const overlayBtn = document.getElementById('overlayBtn');
+    overlayBtn.disabled = true;
+
+    let mouse = { x: 0, y: 0, down: false };
+    canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    canvas.addEventListener('mousedown', () => mouse.down = true);
+    canvas.addEventListener('mouseup', () => mouse.down = false);
 
     class Firefly {
-      constructor(){
-        this.r = 5 + Math.random()*5;
-        this.x = Math.random()*canvas.width;
-        this.y = Math.random()*canvas.height;
-        this.vx = (Math.random()-0.5)*(1 + 0.2*level);
-        this.vy = (Math.random()-0.5)*(1 + 0.2*level);
-        let types = ['snare','kick','hihat','cymbal'];
-        if (!fireflies.some(f=>f.type==='loop')) types.push('loop');
-        this.type = types[Math.floor(Math.random()*types.length)];
-
-        switch(this.type){
+      constructor() {
+        this.r = 5 + Math.random() * 5;
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * (1 + 0.2 * level);
+        this.vy = (Math.random() - 0.5) * (1 + 0.2 * level);
+        let types = ['snare', 'kick', 'hihat', 'cymbal'];
+        if (!fireflies.some(f => f.type === 'loop')) types.push('loop');
+        this.type = types[Math.floor(Math.random() * types.length)];
+        switch (this.type) {
           case 'snare':
-            this.colStart='rgba(255,255,0,0.9)';
-            this.colEnd  ='rgba(255,255,0,0)';
-            this.buf= buffers.snare; this.scoreVal=1; break;
+            this.colStart = 'rgba(255,255,0,0.9)';
+            this.colEnd = 'rgba(255,255,0,0)';
+            this.buf = buffers.snare; this.scoreVal = 1;
+            break;
           case 'kick':
-            this.colStart='rgba(0,255,0,0.9)';
-            this.colEnd  ='rgba(0,255,0,0)';
-            this.buf= buffers.kick; this.scoreVal=1; break;
+            this.colStart = 'rgba(0,255,0,0.9)';
+            this.colEnd = 'rgba(0,255,0,0)';
+            this.buf = buffers.kick; this.scoreVal = 1;
+            break;
           case 'hihat':
-            this.colStart='rgba(0,200,255,0.9)';
-            this.colEnd  ='rgba(0,200,255,0)';
-            this.buf= buffers.hihat; this.scoreVal=1; break;
+            this.colStart = 'rgba(0,200,255,0.9)';
+            this.colEnd = 'rgba(0,200,255,0)';
+            this.buf = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
+            this.scoreVal = 1;
+            break;
           case 'cymbal':
-            this.colStart='rgba(255,165,0,0.9)';
-            this.colEnd  ='rgba(255,165,0,0)';
-            this.buf= buffers.cymbal; this.scoreVal=1; break;
+            this.colStart = 'rgba(255,165,0,0.9)';
+            this.colEnd = 'rgba(255,165,0,0)';
+            this.buf = buffers.cymbal; this.scoreVal = 1;
+            break;
           case 'loop':
-            this.colStart='rgba(200,0,255,0.9)';
-            this.colEnd  ='rgba(200,0,255,0)';
-            
-            this.buf = buffers.loop[Math.floor(Math.random()*buffers.loop.length)];
-            this.scoreVal=2; break;
+            this.colStart = 'rgba(200,0,255,0.9)';
+            this.colEnd = 'rgba(200,0,255,0)';
+            this.buf = buffers.loop[Math.floor(Math.random() * buffers.loop.length)];
+            this.scoreVal = 2;
+            break;
         }
       }
-      update(dt){
-        this.x += this.vx * dt/16;
-        this.y += this.vy * dt/16;
-        if(this.x<0||this.x>canvas.width) this.vx*=-1;
-        if(this.y<0||this.y>canvas.height) this.vy*=-1;
+      update(dt) {
+        this.x += this.vx * dt / 16;
+        this.y += this.vy * dt / 16;
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
       }
-      draw(){
-        const g = ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r*4);
-        g.addColorStop(0,this.colStart); g.addColorStop(1,this.colEnd);
+      draw() {
+        const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4);
+        g.addColorStop(0, this.colStart);
+        g.addColorStop(1, this.colEnd);
         ctx.beginPath();
-        ctx.fillStyle=g;
-        ctx.arc(this.x,this.y,this.r*4,0,2*Math.PI);
+        ctx.fillStyle = g;
+        ctx.arc(this.x, this.y, this.r * 4, 0, 2 * Math.PI);
         ctx.fill();
       }
     }
 
-    function spawnFirefly(){
-      fireflies.push(new Firefly());
+    function spawnFirefly() { fireflies.push(new Firefly()); }
+
+    function resetGame() {
+      fireflies = [];
+      score = 0; level = 1; catches = 0;
+      spawnInterval = 2000; spawnTimer = 0;
+      gameOver = false;
     }
 
-    function resetGame(){
-      fireflies=[]; score=0; level=1; catches=0;
-      spawnInterval=2000; spawnTimer=0;
-      gameOver=false;
-    }
-
-    overlayBtn.addEventListener('click',()=>{
-      if (!running||gameOver){
+    overlayBtn.addEventListener('click', () => {
+      if (!running || gameOver) {
         overlay.classList.add('hidden');
         resetGame();
-        running=true; lastTime=performance.now();
-        for(let i=0;i<5;i++) spawnFirefly();
+        running = true; lastTime = performance.now();
+        for (let i = 0; i < 5; i++) spawnFirefly();
         requestAnimationFrame(gameLoop);
       }
     });
 
-    function showGameOver(){
-      running=false; gameOver=true;
+    function showGameOver() {
+      running = false; gameOver = true;
       overlay.querySelector('p').textContent = `Game Over! Final Score: ${score}`;
       overlayBtn.textContent = 'Remix Again';
       overlay.classList.remove('hidden');
     }
 
-    function gameLoop(now){
-      if(!running) return;
-      let dt = now - lastTime; lastTime = now;
+    function gameLoop(now) {
+      if (!running) return;
+      const dt = now - lastTime; lastTime = now;
       spawnTimer += dt;
-      if (spawnTimer > spawnInterval){
+      if (spawnTimer > spawnInterval) {
         spawnFirefly();
         spawnTimer -= spawnInterval;
       }
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      for(let i=fireflies.length-1;i>=0;i--){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = fireflies.length - 1; i >= 0; i--) {
         const f = fireflies[i];
         f.update(dt);
-
-        if(mouse.down){
-          const dx = f.x-mouse.x, dy=f.y-mouse.y;
-          if (Math.hypot(dx,dy) < f.r*4){
-            if (f.type==='cymbal'){
+        if (mouse.down) {
+          const dx = f.x - mouse.x, dy = f.y - mouse.y;
+          if (Math.hypot(dx, dy) < f.r * 4) {
+            if (f.type === 'cymbal') {
               playLoop(f.buf, 4);
-            } else if (f.type==='loop'){
+            } else if (f.type === 'loop') {
               playLoop(f.buf, 8);
             } else {
               playOne(f.buf);
             }
-            fireflies.splice(i,1);
+            fireflies.splice(i, 1);
             score += f.scoreVal;
             catches++;
-            if (catches>=10){
-              level++; catches=0;
-              spawnInterval = Math.max(500, spawnInterval*0.9);
+            if (catches >= 10) {
+              level++; catches = 0;
+              spawnInterval = Math.max(500, spawnInterval * 0.9);
             }
-            if (level>10) showGameOver(); 
+            if (level > 10) showGameOver();
           }
         }
         f.draw();
       }
-
-      if (mouse.down){
+      if (mouse.down) {
         ctx.beginPath();
-        ctx.strokeStyle='rgba(255,255,255,0.7)';
-        ctx.lineWidth=2;
-        ctx.arc(mouse.x,mouse.y,30,0,2*Math.PI);
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 2;
+        ctx.arc(mouse.x, mouse.y, 30, 0, 2 * Math.PI);
         ctx.stroke();
       }
-
       requestAnimationFrame(gameLoop);
     }
   </script>
