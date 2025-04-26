@@ -70,6 +70,7 @@
     #startBtn:hover:enabled {
       background: #0a0;
     }
+    canvas { display: none; }
   </style>
 </head>
 <body>
@@ -77,70 +78,80 @@
   <h1>Firefly Frenzy - Own Mode</h1>
   <p>Upload your own samples. Make sure loops and break are same BPM!</p>
 
-  <div class="uploader">
-    <label for="anime1">Upload Anime Sample 1</label>
-    <input type="file" id="anime1" accept="audio/mp3">
-    <div id="anime1Status" class="uploaded"></div>
-  </div>
-  <div class="uploader">
-    <label for="anime2">Upload Anime Sample 2</label>
-    <input type="file" id="anime2" accept="audio/mp3">
-    <div id="anime2Status" class="uploaded"></div>
-  </div>
-  <div class="uploader">
-    <label for="anime3">Upload Anime Sample 3</label>
-    <input type="file" id="anime3" accept="audio/mp3">
-    <div id="anime3Status" class="uploaded"></div>
-  </div>
-  <div class="uploader">
-    <label for="anime4">Upload Anime Sample 4</label>
-    <input type="file" id="anime4" accept="audio/mp3">
-    <div id="anime4Status" class="uploaded"></div>
+  <div id="uploadSection">
+    <div class="uploader">
+      <label for="anime1">Upload Anime Sample 1</label>
+      <input type="file" id="anime1" accept="audio/mp3">
+      <div id="anime1Status" class="uploaded"></div>
+    </div>
+    <div class="uploader">
+      <label for="anime2">Upload Anime Sample 2</label>
+      <input type="file" id="anime2" accept="audio/mp3">
+      <div id="anime2Status" class="uploaded"></div>
+    </div>
+    <div class="uploader">
+      <label for="anime3">Upload Anime Sample 3</label>
+      <input type="file" id="anime3" accept="audio/mp3">
+      <div id="anime3Status" class="uploaded"></div>
+    </div>
+    <div class="uploader">
+      <label for="anime4">Upload Anime Sample 4</label>
+      <input type="file" id="anime4" accept="audio/mp3">
+      <div id="anime4Status" class="uploaded"></div>
+    </div>
+
+    <div class="uploader">
+      <label for="loop1">Upload Loop 1</label>
+      <input type="file" id="loop1" accept="audio/mp3">
+      <div id="loop1Status" class="uploaded"></div>
+    </div>
+    <div class="uploader">
+      <label for="loop2">Upload Loop 2</label>
+      <input type="file" id="loop2" accept="audio/mp3">
+      <div id="loop2Status" class="uploaded"></div>
+    </div>
+    <div class="uploader">
+      <label for="loop3">Upload Loop 3</label>
+      <input type="file" id="loop3" accept="audio/mp3">
+      <div id="loop3Status" class="uploaded"></div>
+    </div>
+    <div class="uploader">
+      <label for="loop4">Upload Loop 4</label>
+      <input type="file" id="loop4" accept="audio/mp3">
+      <div id="loop4Status" class="uploaded"></div>
+    </div>
+
+    <div class="uploader">
+      <label for="amenBreak">Upload Amen Break</label>
+      <input type="file" id="amenBreak" accept="audio/mp3">
+      <div id="amenBreakStatus" class="uploaded"></div>
+    </div>
+
+    <div id="warning">All uploads are mandatory!</div>
+    <button id="startBtn" disabled>Start Breaking</button>
   </div>
 
-  <div class="uploader">
-    <label for="loop1">Upload Loop 1</label>
-    <input type="file" id="loop1" accept="audio/mp3">
-    <div id="loop1Status" class="uploaded"></div>
-  </div>
-  <div class="uploader">
-    <label for="loop2">Upload Loop 2</label>
-    <input type="file" id="loop2" accept="audio/mp3">
-    <div id="loop2Status" class="uploaded"></div>
-  </div>
-  <div class="uploader">
-    <label for="loop3">Upload Loop 3</label>
-    <input type="file" id="loop3" accept="audio/mp3">
-    <div id="loop3Status" class="uploaded"></div>
-  </div>
-  <div class="uploader">
-    <label for="loop4">Upload Loop 4</label>
-    <input type="file" id="loop4" accept="audio/mp3">
-    <div id="loop4Status" class="uploaded"></div>
-  </div>
-
-  <div class="uploader">
-    <label for="amenBreak">Upload Amen Break</label>
-    <input type="file" id="amenBreak" accept="audio/mp3">
-    <div id="amenBreakStatus" class="uploaded"></div>
-  </div>
-
-  <div id="warning">All uploads are mandatory!</div>
-  <button id="startBtn" disabled>Start Breaking</button>
+  <canvas id="gameCanvas"></canvas>
 
   <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const requiredFiles = [
       'anime1', 'anime2', 'anime3', 'anime4',
       'loop1', 'loop2', 'loop3', 'loop4',
       'amenBreak'
     ];
     const uploaded = {};
+    const buffers = {
+      anime: [],
+      loop: [],
+      amen: null
+    };
 
     requiredFiles.forEach(id => {
       const input = document.getElementById(id);
       input.addEventListener('change', () => {
         if (input.files.length > 0) {
-          uploaded[id] = true;
+          uploaded[id] = input.files[0];
           document.getElementById(id + 'Status').textContent = '✅ ' + input.files[0].name;
         }
         updateStatus();
@@ -162,12 +173,164 @@
       }
     }
 
-    document.getElementById('startBtn').addEventListener('click', () => {
-      document.body.innerHTML = '<h1>Loading your samples...</h1>';
-      // You can proceed loading the actual samples into the game here.
-    });
-  </script>
+    function loadFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          audioCtx.decodeAudioData(reader.result)
+            .then(resolve)
+            .catch(reject);
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
 
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      document.getElementById('warning').textContent = 'Loading your samples...';
+      try {
+        for (let i = 1; i <= 4; i++) {
+          const buf = await loadFile(uploaded['anime' + i]);
+          buffers.anime.push(buf);
+        }
+        for (let i = 1; i <= 4; i++) {
+          const buf = await loadFile(uploaded['loop' + i]);
+          buffers.loop.push(buf);
+        }
+        buffers.amen = await loadFile(uploaded['amenBreak']);
+
+        // Start the game now
+        document.getElementById('uploadSection').style.display = 'none';
+        startGame();
+      } catch (err) {
+        console.error(err);
+        alert('Error loading samples!');
+      }
+    });
+
+    function startGame() {
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.style.display = 'block';
+
+      function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const activeSources = new Set();
+
+      function playOne(buffer) {
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(audioCtx.destination);
+        activeSources.add(src);
+        src.onended = () => activeSources.delete(src);
+        src.start();
+      }
+
+      function playLoop(buffer, count) {
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        src.loop = true;
+        src.connect(audioCtx.destination);
+        activeSources.add(src);
+        src.onended = () => activeSources.delete(src);
+        src.start();
+        setTimeout(() => src.stop(), buffer.duration * count * 1000);
+      }
+
+      let fireflies = [], score = 0, level = 1, catches = 0;
+      let spawnInterval = 2000, spawnTimer = 0, lastTime = 0;
+      let running = true;
+
+      let mouse = { x: 0, y: 0, down: false };
+      canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+      canvas.addEventListener('mousedown', () => mouse.down = true);
+      canvas.addEventListener('mouseup', () => mouse.down = false);
+
+      class Firefly {
+        constructor() {
+          this.r = 5 + Math.random() * 5;
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.vx = (Math.random() - 0.5) * (1 + 0.2 * level);
+          this.vy = (Math.random() - 0.5) * (1 + 0.2 * level);
+          let types = ['anime', 'loop', 'amen'];
+          this.type = types[Math.floor(Math.random() * types.length)];
+          switch (this.type) {
+            case 'anime':
+              this.color = 'rgba(180,220,255,0.8)';
+              this.buffer = buffers.anime[Math.floor(Math.random() * buffers.anime.length)];
+              break;
+            case 'loop':
+              this.color = 'rgba(220,180,255,0.8)';
+              this.buffer = buffers.loop[Math.floor(Math.random() * buffers.loop.length)];
+              break;
+            case 'amen':
+              this.color = 'rgba(255,210,170,0.8)';
+              this.buffer = buffers.amen;
+              break;
+          }
+        }
+        update(dt) {
+          this.x += this.vx * dt / 16;
+          this.y += this.vy * dt / 16;
+          if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+          if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = this.color;
+          ctx.arc(this.x, this.y, this.r * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function spawnFirefly() { fireflies.push(new Firefly()); }
+
+      function gameLoop(now) {
+        if (!running) return;
+        const dt = now - lastTime; lastTime = now;
+        spawnTimer += dt;
+        if (spawnTimer > spawnInterval) {
+          spawnFirefly();
+          spawnTimer = 0;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = fireflies.length - 1; i >= 0; i--) {
+          const f = fireflies[i];
+          f.update(dt);
+          if (mouse.down) {
+            const dx = f.x - mouse.x, dy = f.y - mouse.y;
+            if (Math.hypot(dx, dy) < f.r * 4) {
+              if (f.type === 'loop' || f.type === 'amen') playLoop(f.buffer, 16);
+              else playOne(f.buffer);
+              fireflies.splice(i, 1);
+              score++;
+              catches++;
+              if (catches >= 10) {
+                level++;
+                catches = 0;
+                spawnInterval = Math.max(500, spawnInterval * 0.9);
+              }
+            }
+          }
+          f.draw();
+        }
+        if (mouse.down) {
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 2;
+          ctx.arc(mouse.x, mouse.y, 30, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        requestAnimationFrame(gameLoop);
+      }
+
+      for (let i = 0; i < 5; i++) spawnFirefly();
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+  </script>
 </body>
 </html>
--
