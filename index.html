@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Firefly DJ Frenzy</title>
+  <title>Firefly Frenzy</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box }
     body { overflow:hidden; background:#111; color:#fff; font-family:sans-serif }
@@ -222,7 +222,7 @@
           const dx = f.x-mouse.x, dy=f.y-mouse.y;
           if (Math.hypot(dx,dy) < f.r*4){
             if (f.type==='cymbal'){
-              playLoop(f.buf, 16);
+              playLoop(f.buf, 4);
             } else if (f.type==='loop'){
               playLoop(f.buf, 8);
             } else {
