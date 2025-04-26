@@ -8,9 +8,8 @@
     * { margin:0; padding:0; box-sizing:border-box }
     body { 
       overflow:hidden; 
-      background:url('poser1.gif') center center / cover no-repeat;
-      background-size: cover;
-      transition: background-image 1s ease-in-out;
+      background-color: #1f1f2e; 
+      transition: background-color 1s ease-in-out;
       color:#fff; 
       font-family:sans-serif; 
       position: relative;
@@ -257,13 +256,6 @@
         requestAnimationFrame(gameLoop);
       }
     });
-
-    const backgrounds = ['poser1.gif', 'poser2.gif', 'poser3.gif', 'poser4.gif'];
-    let current = 0;
-    setInterval(() => {
-      current = (current + 1) % backgrounds.length;
-      document.body.style.backgroundImage = `url('${backgrounds[current]}')`;
-    }, 5000);
 
     function gameLoop(now) {
       if (!running) return;
