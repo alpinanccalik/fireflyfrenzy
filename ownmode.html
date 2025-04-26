@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Firefly Frenzy - Own Mode</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       background-color: #1f1f2e; /* pastel dark color */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -15,19 +20,23 @@
       overflow-y: scroll;
       position: relative;
     }
+
     h1 {
       font-size: 36px;
       margin-bottom: 20px;
       color: #ffcccb; /* pastel pink for the title */
     }
+
     p {
       font-size: 18px;
       margin-bottom: 25px;
       color: #f0f0f0;
     }
+
     .uploader {
       margin: 15px 0;
     }
+
     label {
       display: inline-block;
       padding: 12px 25px;
@@ -39,27 +48,32 @@
       font-weight: bold;
       transition: background 0.3s, transform 0.3s;
     }
+
     label:hover {
       background: #7a6bb8;
       transform: scale(1.05);
     }
+
     input[type="file"] {
       display: none;
     }
+
     .uploaded {
       margin-top: 5px;
       font-size: 14px;
-      color: #b3e0c2; /* soft green text */
+      color: #b3e0c2; 
     }
+
     #warning {
       margin-top: 15px;
       font-size: 16px;
-      color: #ffdd00; /* warning color */
+      color: #ffdd00; 
     }
+
     #startBtn {
       margin-top: 20px;
       padding: 14px 30px;
-      background: #ff6f61; /* coral red button */
+      background: #ff6f61; 
       border: none;
       border-radius: 8px;
       color: #fff;
@@ -67,28 +81,33 @@
       cursor: pointer;
       transition: background 0.3s, transform 0.3s;
     }
+
     #startBtn:disabled {
       background: #666;
       cursor: not-allowed;
     }
+
     #startBtn:hover:enabled {
       background: #ff5a47;
       transform: scale(1.05);
     }
+
     #overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.6); 
+      background-color: rgba(0, 0, 0, 0.6);
       z-index: 1;
     }
-    canvas { 
+
+    canvas {
       display: block;
       position: absolute;
       z-index: 0;
     }
+
     .content {
       position: relative;
       z-index: 2;
@@ -101,7 +120,7 @@
 
   <div class="content">
     <h1>Firefly Frenzy - Own Mode</h1>
-    <p>Upload your own samples. Make sure loops and break are the same BPM!</p>
+    <p>Upload your own samples. Anime samples are optional. Make sure loops and break are the same BPM!</p>
 
     <div id="uploadSection">
       <div class="uploader">
@@ -152,7 +171,7 @@
         <div id="amenBreakStatus" class="uploaded"></div>
       </div>
 
-      <div id="warning">All uploads are mandatory!</div>
+      <div id="warning">All amen break and loop uploads are mandatory, others are optional!</div>
       <button id="startBtn" disabled>Start Breaking</button>
     </div>
   </div>
@@ -162,17 +181,19 @@
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const requiredFiles = [
-      'anime1', 'anime2', 'anime3', 'anime4',
-      'loop1', 'loop2', 'loop3', 'loop4',
+      'loop1',
+      'loop2',
+      'loop3',
+      'loop4',
       'amenBreak'
-    ];
+    ]; 
     const uploaded = {};
     const buffers = {
       anime: [],
       loop: [],
       amen: null
     };
-
+    
     requiredFiles.forEach(id => {
       const input = document.getElementById(id);
       input.addEventListener('change', () => {
@@ -190,11 +211,11 @@
       const startBtn = document.getElementById('startBtn');
       if (allDone) {
         warning.textContent = 'All samples uploaded. Ready!';
-        warning.style.color = '#b3e0c2'; // soft green for ready
+        warning.style.color = '#b3e0c2'; 
         startBtn.disabled = false;
       } else {
         warning.textContent = 'All uploads are mandatory!';
-        warning.style.color = '#ffdd00'; // warning color
+        warning.style.color = '#ffdd00'; 
         startBtn.disabled = true;
       }
     }
@@ -215,14 +236,19 @@
     document.getElementById('startBtn').addEventListener('click', async () => {
       document.getElementById('warning').textContent = 'Loading your samples...';
       try {
+        
         for (let i = 1; i <= 4; i++) {
-          const buf = await loadFile(uploaded['anime' + i]);
-          buffers.anime.push(buf);
+          if (uploaded['anime' + i]) {
+            const buf = await loadFile(uploaded['anime' + i]);
+            buffers.anime.push(buf);
+          }
         }
+
         for (let i = 1; i <= 4; i++) {
           const buf = await loadFile(uploaded['loop' + i]);
           buffers.loop.push(buf);
         }
+
         buffers.amen = await loadFile(uploaded['amenBreak']);
 
         document.getElementById('uploadSection').style.display = 'none';
@@ -238,7 +264,11 @@
       const ctx = canvas.getContext('2d');
       canvas.style.display = 'block';
 
-      function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+      function resize() {
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+      }
+
       window.addEventListener('resize', resize);
       resize();
 
@@ -264,8 +294,13 @@
         setTimeout(() => src.stop(), buffer.duration * count * 1000);
       }
 
-      let fireflies = [], score = 0, level = 1, catches = 0;
-      let spawnInterval = 2000, spawnTimer = 0, lastTime = 0;
+      let fireflies = [],
+        score = 0,
+        level = 1,
+        catches = 0;
+      let spawnInterval = 2000,
+        spawnTimer = 0,
+        lastTime = 0;
       let running = true;
 
       let mouse = { x: 0, y: 0, down: false };
@@ -297,12 +332,14 @@
               break;
           }
         }
+
         update(dt) {
           this.x += this.vx * dt / 16;
           this.y += this.vy * dt / 16;
           if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
           if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
         }
+
         draw() {
           ctx.beginPath();
           ctx.fillStyle = this.color;
@@ -311,11 +348,14 @@
         }
       }
 
-      function spawnFirefly() { fireflies.push(new Firefly()); }
+      function spawnFirefly() {
+        fireflies.push(new Firefly());
+      }
 
       function gameLoop(now) {
         if (!running) return;
-        const dt = now - lastTime; lastTime = now;
+        const dt = now - lastTime;
+        lastTime = now;
         spawnTimer += dt;
         if (spawnTimer > spawnInterval) {
           spawnFirefly();
@@ -326,7 +366,8 @@
           const f = fireflies[i];
           f.update(dt);
           if (mouse.down) {
-            const dx = f.x - mouse.x, dy = f.y - mouse.y;
+            const dx = f.x - mouse.x,
+              dy = f.y - mouse.y;
             if (Math.hypot(dx, dy) < f.r * 4) {
               if (f.type === 'loop' || f.type === 'amen') playLoop(f.buffer, 16);
               else playOne(f.buffer);
@@ -357,5 +398,6 @@
       requestAnimationFrame(gameLoop);
     }
   </script>
+
 </body>
 </html>
